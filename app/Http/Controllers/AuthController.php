@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class AuthController extends Controller
+{
+    public function showLogin()
+    {
+        return view('auth.login');
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+
+            // Redirect berdasarkan role
+            switch ($user->role) {
+                case 'ADMIN':
+                    return redirect()->route('dashboard');
+                case 'TAMU':
+                    return redirect()->route('reservasi');
+                default:
+                    Auth::logout();
+                    return redirect()->route('login')->withErrors(['error' => 'Role tidak dikenali!']);
+            }
+        }
+
+        return back()->withErrors(['email' => 'Email atau password salah.']);
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+        return redirect()->route('login');
+    }
+}
